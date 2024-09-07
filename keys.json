@@ -1,5 +1,10 @@
 {
     "79462517602": {
         "status": "not redeemed"
+    },
+    "70490288967": {
+        "status": "redeemed",
+        "redeemed_by": "@645601772047695893",
+        "hwid": null
     }
 }

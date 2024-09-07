@@ -26,10 +26,12 @@ BUYER_ROLE_ID = 1272776413908308041
 ADMIN_ROLE_ID = 1272804155433422931
 
 def initialize_file(file_path, default_data):
+    """Initialize a JSON file with default data if it does not exist."""
     if not os.path.exists(file_path):
         save_json(file_path, default_data)
 
 def load_json(file_path):
+    """Load JSON data from a file."""
     try:
         with open(file_path, 'r') as file:
             return json.load(file)
@@ -37,10 +39,12 @@ def load_json(file_path):
         return {}
 
 def save_json(file_path, data):
+    """Save JSON data to a file."""
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
 
 def generate_keys(num_keys):
+    """Generate a dictionary of keys with a given number of keys."""
     keys = {}
     for _ in range(num_keys):
         key = ''.join(random.choices(string.digits, k=11))
@@ -48,10 +52,12 @@ def generate_keys(num_keys):
     return keys
 
 def generate_hwid(user_id):
+    """Generate a unique HWID for a user in the format @<HWID>."""
     random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     return f"@{user_id}-{random_suffix}"
 
 def redeem_key_without_hwid(key, user_id):
+    """Redeem a key for a user but without storing the HWID initially."""
     keys = load_json(KEYS_FILE)
     users = load_json(USERS_FILE)
     used_keys = load_json(USED_KEYS_FILE)
@@ -76,6 +82,7 @@ def redeem_key_without_hwid(key, user_id):
     return False
 
 def update_key_hwid_after_confirmation(key, hwid):
+    """Update the HWID for a redeemed key after confirmation by user."""
     keys = load_json(KEYS_FILE)
     if key in keys:
         if isinstance(keys[key], dict):
@@ -87,19 +94,23 @@ def update_key_hwid_after_confirmation(key, hwid):
     return False
 
 def is_buyer(ctx):
+    """Check if the user has the 'Buyer' role."""
     role = discord.utils.get(ctx.guild.roles, id=BUYER_ROLE_ID)
     return role in ctx.author.roles
 
 def is_admin(ctx):
+    """Check if the user has the admin role."""
     role = discord.utils.get(ctx.guild.roles, id=ADMIN_ROLE_ID)
     return role in ctx.author.roles
 
 def buyer_required():
+    """Decorator to require the 'Buyer' role."""
     def predicate(ctx):
         return is_buyer(ctx)
     return commands.check(predicate)
 
 def admin_required():
+    """Decorator to require the admin role."""
     def predicate(ctx):
         return is_admin(ctx)
     return commands.check(predicate)
@@ -241,11 +252,23 @@ async def generatekeys(ctx, num_keys: int):
         await ctx.send("Please provide a valid number of keys to generate.")
         return
 
-    new_keys = generate_keys(num_keys)
-    save_json(KEYS_FILE, new_keys)
+    # Load existing keys
+    keys = load_json(KEYS_FILE)
 
+    # Generate new keys
+    new_keys = generate_keys(num_keys)
+
+    # Add new keys to existing ones
+    keys.update(new_keys)
+
+    # Save updated keys
+    save_json(KEYS_FILE, keys)
+
+    # Notify admin
     for key in new_keys.keys():
         await ctx.author.send(f"Generated key: {key}")
+
+    await ctx.send(f"{num_keys} new keys have been generated and added.")
 
 @bot.command()
 @admin_required()
