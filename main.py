@@ -121,31 +121,44 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if str(message.author.id) == '1273044266347663395':
+    # Check if the message is from the specific user
+    if str(message.author.id) == '1281744707323695156':
+        # Respond to the user
         await message.channel.send("Understood, copied")
 
+        # Define patterns for extracting data
         user_pattern = re.compile(r'User:\s*(\S+)')
         client_id_pattern = re.compile(r'Client ID:\s*([\w-]+)')
         script_key_pattern = re.compile(r'Script Key:\s*(\S+)')
 
+        # Search for data in the message content
         user_match = user_pattern.search(message.content)
         client_id_match = client_id_pattern.search(message.content)
         script_key_match = script_key_pattern.search(message.content)
 
+        # Check if all required data is found
         if user_match and client_id_match and script_key_match:
             user = user_match.group(1)
-            client_id = client_id_match.group(1)
+            client_id = client_id_match.group(1)  # This is the HWID in this context
             script_key = script_key_match.group(1)
 
+            # Load keys and users data
             keys = load_json(KEYS_FILE)
             key_data = keys.get(script_key)
 
-            if key_data and key_data.get("hwid") is None:
-                if update_key_hwid_after_confirmation(script_key, client_id):
-                    await message.channel.send(f"HWID for key {script_key} has been updated.")
+            if key_data:
+                if key_data.get("hwid") is None:
+                    # Update the HWID for the key
+                    if update_key_hwid_after_confirmation(script_key, client_id):
+                        await message.channel.send(f"HWID for key {script_key} has been updated.")
+                    else:
+                        await message.channel.send(f"Key {script_key} already has a HWID or is not valid.")
                 else:
-                    await message.channel.send(f"Key {script_key} already has a HWID or is not valid.")
+                    await message.channel.send(f"Key {script_key} already has an HWID.")
+            else:
+                await message.channel.send(f"Key {script_key} does not exist.")
 
+    # Process commands after handling the specific message
     await bot.process_commands(message)
 
 @bot.command()
